@@ -71,3 +71,36 @@
   (let ((property (unwrap! (map-get? properties {property-id: property-id}) ERR-NOT-AVAILABLE)))
     (asserts! (is-some (get rent-price property)) ERR-NOT-AVAILABLE)
     (ok "Rent paid successfully")))
+
+    ;; --------------------
+;; Property Auction System
+;; --------------------
+(define-public (start-auction (property-id uint) (min-bid uint) (duration uint))
+  (let ((property (unwrap! (map-get? properties {property-id: property-id}) ERR-NOT-AVAILABLE)))
+    (asserts! (is-eq tx-sender (get owner property)) ERR-NOT-OWNER)
+    (map-set auctions {property-id: property-id} {highest-bid: min-bid, highest-bidder: none, active: true, end-block: (+ block-height duration)})
+    (ok true)))
+
+(define-public (place-bid (property-id uint) (bid uint))
+  (let ((auction (unwrap! (map-get? auctions {property-id: property-id}) ERR-NOT-AVAILABLE)))
+    (asserts! (> bid (get highest-bid auction)) ERR-INSUFFICIENT-FUNDS)
+    (map-set auctions {property-id: property-id} (merge auction {highest-bid: bid, highest-bidder: (some tx-sender)}))
+    (ok "Bid placed successfully")))
+
+(define-public (finalize-auction (property-id uint))
+  (let ((auction (unwrap! (map-get? auctions {property-id: property-id}) ERR-NOT-AVAILABLE)))
+    (asserts! (> block-height (get end-block auction)) ERR-NOT-AVAILABLE)
+    (asserts! (get active auction) ERR-NOT-AVAILABLE)
+    (let ((property (unwrap! (map-get? properties {property-id: property-id}) ERR-NOT-AVAILABLE)))
+      (map-set properties {property-id: property-id} (merge property {owner: (unwrap! (get highest-bidder auction) ERR-NOT-AUTHORIZED), for-sale: false}))
+      (map-set auctions {property-id: property-id} (merge auction {active: false}))
+      (ok "Auction finalized"))))
+
+;; --------------------
+;; Governance System
+;; --------------------
+(define-public (update-dao-governance (new-address principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get dao-governance-address)) ERR-NOT-AUTHORIZED)
+    (var-set dao-governance-address new-address)
+    (ok true)))
