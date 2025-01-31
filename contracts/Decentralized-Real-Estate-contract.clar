@@ -1,15 +1,24 @@
+(use-trait sip009-nft-trait 'SP2NFTSTND.token-nft.sip009-trait)
 
-;; Decentralized-Real-Estate-contract
-;; <add a description here>
+;; --------------------
+;; Constants & Errors
+;; --------------------
+(define-constant ERR-NOT-OWNER (err u100))
+(define-constant ERR-NOT-AUTHORIZED (err u101))
+(define-constant ERR-NOT-AVAILABLE (err u102))
+(define-constant ERR-INSUFFICIENT-FUNDS (err u103))
 
-;; constants
-;;
+;; --------------------
+;; Data Maps & Variables
+;; --------------------
+(define-map properties 
+  {property-id: uint} 
+  {owner: principal, price: uint, for-sale: bool, rent-price: (optional uint), escrow: (optional principal)})
 
-;; data maps and vars
-;;
+(define-map fractional-ownership 
+  {property-id: uint, investor: principal} 
+  {shares: uint})
 
-;; private functions
-;;a
-
-;; public functions
-;;
+(define-map auctions
+  {property-id: uint}
+  {highest-bid: uint, highest-bidder: (optional principal), active: bool, end-block: uint})
